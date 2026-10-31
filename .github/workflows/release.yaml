@@ -1,0 +1,55 @@
+name: Create release on github
+
+on:
+  workflow_run:
+    workflows:
+      - Build binaries
+    types:
+      - "completed"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Diag event
+        run: |
+          echo "head_branch=${{ github.event.workflow_run.head_branch }}"
+          echo "head_repo=${{ github.event.workflow_run.head_repository.full_name }}"
+          echo "wr_event=${{ github.event.workflow_run.event }}"
+      - name: checkout
+        uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_branch }}
+      - name: Download artifacts from build stage
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: build.yaml
+          name: release-artifacts
+          path: releases/
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: match-tag
+        with:
+          text: ${{ github.event.workflow_run.head_branch }}
+          regex: '^v([0-9]+\.\d+\.\d+)$'
+      - name: Show state
+        run: |
+          echo "match=[${{ steps.match-tag.outputs.match }}]"
+          ls -la releases/ || true
+          echo "--- payload ---"
+          cat releases/payload.txt || true
+          echo "--- checked out head ---"
+          git rev-parse HEAD
+          git log -1 --format=%s
+      - name: Release to github
+        uses: softprops/action-gh-release@v1
+        if: ${{ steps.match-tag.outputs.match != '' }}
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.event.workflow_run.head_branch }}
+          files: |
+            releases/*
