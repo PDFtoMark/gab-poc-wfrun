@@ -1,0 +1,19 @@
+name: Build binaries
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create artifact
+        run: |
+          mkdir -p releases
+          echo "LEGIT-BUILD-${{ github.sha }}" > releases/payload.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: releases/
