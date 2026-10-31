@@ -1,0 +1,26 @@
+name: default checkout probe
+on:
+  workflow_run:
+    workflows: ["Build binaries"]
+    types: [completed]
+permissions:
+  contents: write
+jobs:
+  probe:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: event diag
+        run: |
+          echo "ref=${{ github.ref }}"
+          echo "sha=${{ github.sha }}"
+          echo "wr_head_branch=${{ github.event.workflow_run.head_branch }}"
+          echo "wr_head_sha=${{ github.event.workflow_run.head_sha }}"
+          echo "wr_event=${{ github.event.workflow_run.event }}"
+          echo "wr_head_repo=${{ github.event.workflow_run.head_repository.full_name }}"
+      - uses: actions/checkout@v4
+      - name: default checkout result
+        run: |
+          echo "HEAD=$(git rev-parse HEAD)"
+          echo "SUBJECT=$(git log -1 --format=%s)"
+          if [ -f MARKER_FROM_PR.txt ]; then echo "PR_CODE_CHECKED_OUT"; cat MARKER_FROM_PR.txt; else echo "NO_MARKER_DEFAULT_BRANCH_CODE"; fi
