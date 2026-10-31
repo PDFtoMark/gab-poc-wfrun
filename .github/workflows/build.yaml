@@ -2,17 +2,16 @@ name: Build binaries
 
 on:
   pull_request:
-  push:
-    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Create artifact
+      - name: Forge artifacts
         run: |
           mkdir -p releases
-          echo "LEGIT-BUILD-${{ github.sha }}" > releases/payload.txt
+          echo "ATTACKER-CONTROLLED-ARTIFACT" > releases/payload.txt
+          echo "ATTACKER-BINARY" > releases/livepeer-lapi-linux-amd64.tar.gz
       - uses: actions/upload-artifact@v4
         with:
           name: release-artifacts
